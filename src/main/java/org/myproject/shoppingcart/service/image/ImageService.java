@@ -3,7 +3,9 @@ package org.myproject.shoppingcart.service.image;
 
 import lombok.RequiredArgsConstructor;
 import org.myproject.shoppingcart.exceptions.ImageNotFoundException;
+import org.myproject.shoppingcart.exceptions.ProductNotFoundException;
 import org.myproject.shoppingcart.model.Image;
+import org.myproject.shoppingcart.model.Product;
 import org.myproject.shoppingcart.repository.ImageRepository;
 import org.myproject.shoppingcart.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +36,20 @@ public class ImageService implements iImageService {
     }
     @Override
     public Image saveImage(MultipartFile imageFile, Long productId) {
-        return null;
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException("Product with id " + productId + " not found"));
+        
+        Image image = new Image();
+        try {
+            image.setImgName(imageFile.getOriginalFilename());
+            image.setImgType(imageFile.getContentType());
+            image.setImageBlob(new SerialBlob(imageFile.getBytes()));
+            image.setProduct(product);
+            return imageRepository.save(image);
+        }
+        catch (IOException | SQLException e) {
+            throw new RuntimeException(e.getMessage());
+        }
     }
     @Override
     public void updateImage(MultipartFile imageFile, Long imageId) {
